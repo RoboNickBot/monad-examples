@@ -5,22 +5,32 @@ import Control.Applicative
 import qualified Data.Map as M
 import qualified Data.List as L
 
+type CrushDB = M.Map String String
 
+sampleCrushDB :: CrushDB 
+sampleCrushDB = M.fromList [ ("carbon"   ,  "aluminum")
+                           , ("iron"     ,  "helium"  )
+                           , ("helium"   ,  "iron"    )
+                           , ("argon"    ,  "radium"  )
+                           , ("radium"   ,  "carbon"  )
+                           , ("hydrogen" ,  "carbon"  )
+                           , ("lithium"  ,  "neon"    ) ]
 
-crushes :: M.Map String String 
-crushes = M.fromList [ ("carbon"   ,  "aluminum")
-                     , ("iron"     ,  "helium"  )
-                     , ("helium"   ,  "iron"    )
-                     , ("argon"    ,  "radium"  )
-                     , ("radium"   ,  "carbon"  )
-                     , ("hydrogen" ,  "carbon"  )
-                     , ("lithium"  ,  "neon"    ) ]
+crush :: CrushDB -> String -> Maybe String
+crush db a = M.lookup a db
 
-crush :: String -> Maybe String
-crush a = M.lookup a crushes
+-- implemented with (>>=)
+opponent :: CrushDB -> String -> Maybe String
+opponent db a = crush db a >>= crush db
 
-requited :: String -> Maybe Bool
-requited a = crush a >>= crush >>= return . (== a)
+-- and implemented without (>>=)
+opponent' :: CrushDB -> String -> Maybe String
+opponent' db a = case crush db a of
+                   Just b -> case crush db b of
+                               Just c -> Just c
+                               _ -> Nothing
+                   _ -> Nothing
 
-isSame :: String -> String -> Bool
-isSame a b = a == b
+isRequited :: CrushDB -> String -> Maybe Bool
+isRequited db a = fmap (== a) (opponent db a)
+
